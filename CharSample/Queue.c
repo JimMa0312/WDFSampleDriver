@@ -63,9 +63,10 @@ Return Value:
         WdfIoQueueDispatchSequential
         );
 
+    //设置EvtIODeviceControl函数，处理应用程序的DeiceIoControl函数的调用
     queueConfig.EvtIoDeviceControl = CharSampleEvtIoDeviceControl;
-    queueConfig.EvtIoStop = CharSampleEvtIoStop;
 
+    //根据队列配置，创建IO队列
     status = WdfIoQueueCreate(
                  Device,
                  &queueConfig,
@@ -114,12 +115,72 @@ Return Value:
 
 --*/
 {
-    TraceEvents(TRACE_LEVEL_INFORMATION, 
-                TRACE_QUEUE, 
-                "%!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d", 
-                Queue, Request, (int) OutputBufferLength, (int) InputBufferLength, IoControlCode);
+    NTSTATUS status;
+    PVOID buffer;
+    CHAR n, c[] = "零一二三四五六七八九";
 
-    WdfRequestComplete(Request, STATUS_SUCCESS);
+    PAGED_CODE();
+
+    TraceEvents(TRACE_LEVEL_INFORMATION,
+        TRACE_QUEUE,
+        "%!FUNC! Queue 0x%p, Request 0x%p OutputBufferLength %d InputBufferLength %d IoControlCode %d",
+        Queue, Request, (int)OutputBufferLength, (int)InputBufferLength, IoControlCode);
+
+    switch (IoControlCode)
+    {
+    case CharSample_IOCTL_800:
+        //检查输入队列的有效性
+        //如果输入队列的有效数据长度为0，或者输出缓存长度小于一个wchar长度，则判断为错误
+        if (InputBufferLength == 0 || OutputBufferLength < 2)
+        {
+            //回馈请求为参数违法
+            WdfRequestComplete(Request, STATUS_INVALID_PARAMETER);
+        }
+        else
+        {
+            //获取输入缓冲区地址Buffer
+            //申请1个字节
+            status = WdfRequestRetrieveInputBuffer(Request, 1, &buffer, NULL);
+            if (!NT_SUCCESS(status))
+            {
+                WdfRequestComplete(Request, STATUS_UNSUCCESSFUL);
+                break;
+            }
+
+            //此时Buffer指针指向的是输入缓冲区地址
+            n = *(CHAR*)buffer;
+            if ((n >= '0') && (n <= '9'))
+            {
+                //如果为数字则处理为汉字
+
+                n -= '0';
+
+                status = WdfRequestRetrieveOutputBuffer(Request, 2, &buffer, NULL);
+
+                if (!NT_SUCCESS(status))
+                {
+                    WdfRequestComplete(Request, STATUS_UNSUCCESSFUL);
+                    break;
+                }
+
+                //此时Buffer指针指向的是输出缓存区地址
+                //输出：从中文数组c中取出对应的汉字数字，并拷贝到缓冲区
+                strncpy((PCHAR)buffer, &c[n * 2], 2);
+
+                //完成I/O请求，驱动程序传给应用的数据长度为2字节
+                WdfRequestCompleteWithInformation(Request, STATUS_SUCCESS, 2);
+            }
+            else
+            {
+                WdfRequestComplete(Request, STATUS_INVALID_PARAMETER);
+            }
+        }
+        break;
+    default:
+        status = STATUS_INVALID_DEVICE_REQUEST;
+        WdfRequestCompleteWithInformation(Request, status, 0);
+        break;
+    }
 
     return;
 }

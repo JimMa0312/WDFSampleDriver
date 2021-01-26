@@ -4,11 +4,11 @@
 
 [Version]
 Signature="$WINDOWS NT$"
-Class=Sample ; TODO: edit Class
+Class=ORGMYC ; TODO: edit Class
 ClassGuid={78A1C341-4539-11d3-B88D-00C04FAD5171} ; TODO: edit ClassGuid
 Provider=%ManufacturerName%
 CatalogFile=CharSample.cat
-DriverVer= ; TODO: set DriverVer in stampinf property pages
+DriverVer=01/26/2021,1.0.0.0; TODO: set DriverVer in stampinf property pages
 
 [DestinationDirs]
 DefaultDestDir = 12
@@ -79,8 +79,8 @@ KmdfLibraryVersion = $KMDFVERSION$
 
 [Strings]
 SPSVCINST_ASSOCSERVICE= 0x00000002
-ManufacturerName="<Your manufacturer name>" ;TODO: Replace with your manufacturer name
-ClassName="Samples" ; TODO: edit ClassName
+ManufacturerName="Myc" ;TODO: Replace with your manufacturer name
+ClassName="ORGMYC" ; TODO: edit ClassName
 DiskName = "CharSample Installation Disk"
-CharSample.DeviceDesc = "CharSample Device"
-CharSample.SVCDESC = "CharSample Service"
+CharSample.DeviceDesc = "CharSample"
+CharSample.SVCDESC = "WDF CharSample Service"
